@@ -1,31 +1,40 @@
-name: Deploy index.html to EC2  # Workflow name
+name: Deploy index.html to EC2
 
-# Trigger workflow only on push to main branch
+# Trigger only when pushing to main branch
 on:
   push:
     branches:
-      - main   # Change to 'dev' if you want to deploy on dev branch
+      - main   # Change to 'dev' if you want dev branch deploy
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # GitHub runner OS
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
+      # Step 1: Checkout the repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # Step 2: Copy index.html to EC2 server
+      # Step 2: Ensure SSH key format is proper for OpenSSH
+      # (Add your PEM RSA key in GitHub Secrets as EC2_KEY)
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      # Step 3: Copy index.html to EC2 using SCP
       - name: Copy index.html to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}       # EC2 public IP or hostname
-          username: ${{ secrets.EC2_USER }}   # EC2 username (usually ubuntu)
-          key: ${{ secrets.EC2_KEY }}     # Private SSH key stored in GitHub Secrets
-          source: "index.html"                # File in your repo to copy
-          target: "/var/www/html/"            # Apache default web root folder
+          host: ${{ secrets.EC2_HOST }}       # EC2 Public IP
+          username: ${{ secrets.EC2_USER }}   # EC2 username (ubuntu)
+          key: ${{ secrets.EC2_KEY }}         # Private key from GitHub Secrets
+          source: "index.html"                # File to copy
+          target: "/var/www/html/"            # Apache web root
+          debug: true                         # Optional: shows debug logs
 
-      # Step 3: Restart Apache (optional, ensures new changes are live)
+      # Step 4: Restart Apache on EC2 (optional)
       - name: Restart Apache
         uses: appleboy/ssh-action@v1.0.3
         with:
