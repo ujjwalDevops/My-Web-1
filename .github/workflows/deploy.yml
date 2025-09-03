@@ -1,47 +1,36 @@
-name: Deploy to EC2
+name: Deploy index.html to EC2  # Workflow name
 
-# Trigger workflow on push to main branch
+# Trigger workflow only on push to main branch
 on:
   push:
     branches:
-      - main
+      - main   # Change to 'dev' if you want to deploy on dev branch
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # GitHub runner OS
 
     steps:
-    # Step 1: Checkout the repository
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      # Step 1: Checkout repository
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    # Step 2: Deploy files to EC2 using SSH
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@v0.1.6
-      with:
-        host: ${{ secrets.EC2_HOST }}      # GitHub secret for EC2 IP
-        username: ${{ secrets.EC2_USER }}  # GitHub secret for EC2 username
-        key: ${{ secrets.EC2_KEY }}        # GitHub secret for EC2 private key (.pem content)
-        port: 22
-        script: |
-          # Navigate to Apache web directory
-          cd /var/www/html
-          
-          # Remove default Apache index.html or old files
-          sudo rm -rf *
+      # Step 2: Copy index.html to EC2 server
+      - name: Copy index.html to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}       # EC2 public IP or hostname
+          username: ${{ secrets.EC2_USER }}   # EC2 username (usually ubuntu)
+          key: ${{ secrets.EC2_SSH_KEY }}     # Private SSH key stored in GitHub Secrets
+          source: "index.html"                # File in your repo to copy
+          target: "/var/www/html/"            # Apache default web root folder
 
-          # Clone your GitHub repo into a temp folder
-          sudo git clone https://github.com/ujjwalDevops/My-Web-1.git
-
-          # Copy files from temp to /var/www/html
-          sudo cp temp/* .
-
-          # Remove temp folder
-          sudo rm -rf temp
-
-          # Set correct permissions
-          sudo chown -R www-data:www-data /var/www/html
-          sudo chmod -R 755 /var/www/html
-
-          # Restart Apache to serve updated files
-          sudo systemctl restart apache2
+      # Step 3: Restart Apache (optional, ensures new changes are live)
+      - name: Restart Apache
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo systemctl restart apache2
