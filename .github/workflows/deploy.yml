@@ -1,0 +1,47 @@
+name: Deploy to EC2
+
+# Trigger workflow on push to main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    # Step 2: Deploy files to EC2 using SSH
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.EC2_HOST }}      # GitHub secret for EC2 IP
+        username: ${{ secrets.EC2_USER }}  # GitHub secret for EC2 username
+        key: ${{ secrets.EC2_KEY }}        # GitHub secret for EC2 private key (.pem content)
+        port: 22
+        script: |
+          # Navigate to Apache web directory
+          cd /var/www/html
+          
+          # Remove default Apache index.html or old files
+          sudo rm -rf *
+
+          # Clone your GitHub repo into a temp folder
+          sudo git clone https://github.com/ujjwalDevops/My-Web-1.git
+
+          # Copy files from temp to /var/www/html
+          sudo cp temp/* .
+
+          # Remove temp folder
+          sudo rm -rf temp
+
+          # Set correct permissions
+          sudo chown -R www-data:www-data /var/www/html
+          sudo chmod -R 755 /var/www/html
+
+          # Restart Apache to serve updated files
+          sudo systemctl restart apache2
