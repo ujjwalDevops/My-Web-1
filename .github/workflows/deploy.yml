@@ -21,7 +21,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}       # EC2 public IP or hostname
           username: ${{ secrets.EC2_USER }}   # EC2 username (usually ubuntu)
-          key: ${{ secrets.EC2_SSH_KEY }}     # Private SSH key stored in GitHub Secrets
+          key: ${{ secrets.EC2_KEY }}     # Private SSH key stored in GitHub Secrets
           source: "index.html"                # File in your repo to copy
           target: "/var/www/html/"            # Apache default web root folder
 
