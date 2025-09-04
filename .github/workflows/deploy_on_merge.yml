@@ -1,0 +1,36 @@
+name: Deploy Website
+
+# यह workflow main branch पर push होने पर trigger होगा
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Repo Checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Copy files to EC2 using SCP
+      - name: Copy index.html to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "index.html"
+          target: "/var/www/html/"
+
+      # Step 3: Restart Apache/Nginx (Optional)
+      - name: Restart Web Server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo systemctl restart apache2 || sudo systemctl restart nginx
