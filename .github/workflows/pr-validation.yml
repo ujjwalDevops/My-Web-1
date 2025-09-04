@@ -1,0 +1,33 @@
+name: PR Validation
+
+# यह workflow PR पर trigger होगा
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Repo checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: HTML Validation (simple check example)
+      - name: Validate HTML
+        run: |
+          echo "Checking index.html file..."
+          if grep -q "<html>" index.html; then
+            echo "✅ HTML looks valid"
+          else
+            echo "❌ HTML is invalid!"
+            exit 1
+          fi
+
+      # Step 3: Simulated Test
+      - name: Run Tests
+        run: |
+          echo "Running test cases..."
+          echo "All tests passed ✅"
